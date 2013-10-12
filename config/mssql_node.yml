@@ -1,0 +1,45 @@
+---
+capacity: 200
+plan: free
+local_db: sqlite3:/Users/khalilz/khalil_vmware/cf/cf-services/mssql_service/bin/services/mssql/mssql_node.db
+base_dir: /Users/khalilz/khalil_vmware/cf/cf-services/mssql_service/bin/services/mssql/data
+database_lock_file: /Users/khalilz/khalil_vmware/cf/cf-services/mssql_service/bin/services/sys/run/LOCK
+disabled_file: /Users/khalilz/khalil_vmware/cf/cf-services/mssql_service/bin/services/store/DISABLED
+service_common_dir: /Users/khalilz/khalil_vmware/cf/cf-services/mssql_service/bin/services/store/common
+# ip_route: 127.0.0.1
+mbus: nats://localhost:4222
+index: 0
+logging:
+  level: debug
+pid: /Users/khalilz/khalil_vmware/cf/cf-services/mssql_service/bin/services/mssql/mssql_node.pid
+node_id: mssql_node_free_1
+supported_versions: ['MSSQLSERVER2008R2']
+default_version: 'MSSQLSERVER2008R2'
+max_db_size: 20
+max_long_query: 3
+max_long_tx: 30
+kill_long_tx: true
+max_user_conns: 20
+migration_nfs: /mnt/migration
+mssql:
+  'MSSQLSERVER2008R2':
+    host: localhost
+    port: 3306
+    user: sa
+    pass: ca$hc0w
+connection_pool_size:
+  min: 5
+  max: 10
+# connection timeout for all management mssql connection
+connection_wait_timeout: 10
+max_disk: 128
+use_warden: false
+
+z_interval: 5
+# max_nats_payload: 1048576
+# fqdn_hosts: false
+# op_time_limit: 6
+status:
+  port: 49544
+  user: sa
+  password: sa
