@@ -1,0 +1,45 @@
+---
+<%
+service = "mssql"
+plan = "free"
+index ||= 1
+%>
+capacity: 200
+plan: <%= plan %>
+local_db: sqlite3:C:\MSSQLaaS\tmp\mssql\mssql_node.db
+base_dir: C:\MSSQLaaS\tmp\mssql\data
+database_lock_file: C:\MSSQLaaS\tmp\sys\run\LOCK
+disabled_file: C:\MSSQLaaS\tmp\store\DISABLED
+service_common_dir: C:\MSSQLaaS\tmp\store\common
+mbus: <%= nats %>
+index: <%= index %>
+logging:
+  level: debug
+  file: C:\MSSQLaaS\tmp\mssql\log\mssql_node.log
+pid: C:\MSSQLaaS\tmp\mssql\mssql_node.pid
+node_id: <%= "#{service}_node_#{plan}_#{index}" %>
+supported_versions: ['2012']
+default_version: '2012'
+max_db_size: 20
+max_long_query: 3
+max_long_tx: 30
+kill_long_tx: true
+max_user_conns: 20
+mssql:
+  '2012':
+    host: localhost
+    port: 1433
+    user: sa
+    pass: ca$hc0w
+connection_pool_size:
+  min: 5
+  max: 10
+connection_wait_timeout: 10
+max_disk: 128
+use_warden: false
+z_interval: 5
+max_nats_payload: 1048576
+status:
+  port: 49544
+  user: sa
+  password: sa

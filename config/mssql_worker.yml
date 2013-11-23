@@ -1,0 +1,18 @@
+---
+service = "mssql"
+plan = "free"
+
+service_name: mssql
+tmp_dir: /tmp
+
+resque:
+  host: 127.0.0.1
+  port: 6379
+
+logging:
+  level: debug
+  file: C:\\MSSQLaaS\\tmp\\mssql\\log\\mssql_worker.log
+
+index: 1
+
+node_id: mssql_node_free_1

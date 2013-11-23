@@ -1,0 +1,38 @@
+#!/usr/bin/env ruby
+# -*- mode: ruby -*-
+# Copyright (c) 2013-2015 VMware, Inc.
+
+ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../Gemfile", File.dirname(__FILE__))
+require "rubygems"
+require "bundler/setup"
+require "vcap_services_base"
+
+require_relative "../lib/mssql_service/node"
+
+class VCAP::Services::MSSQL::NodeBin < VCAP::Services::Base::NodeBin
+
+  def node_class
+    VCAP::Services::MSSQL::Node
+  end
+
+  def default_config_file
+    File.expand_path("../config/mssql_node.yml", File.dirname(__FILE__))
+  end
+
+  def additional_config(options, config)
+    options[:max_db_size] = parse_property(config, "max_db_size", Integer)
+    options[:max_long_query] = parse_property(config, "max_long_query", Integer)
+    options[:max_long_tx] = parse_property(config, "max_long_tx", Integer)
+    options[:kill_long_tx] = parse_property(config, "kill_long_tx", Boolean)
+    options[:max_user_conns] = parse_property(config, "max_user_conns", Integer, :optional => true)
+    options[:mssql] = parse_property(config, "mssql", Hash)
+    options[:connection_pool_size] = parse_property(config, "connection_pool_size", Hash)
+    options[:connection_wait_timeout] = parse_property(config, "connection_wait_timeout", Integer, :optional => true)
+    options[:status] = parse_property(config, "status", Hash).inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo}
+
+    options
+  end
+
+end
+
+VCAP::Services::MSSQL::NodeBin.new.start

@@ -1,0 +1,22 @@
+---
+<%
+service = "mssql"
+plan = "free"
+%>
+
+service_name: mssql
+tmp_dir: <%= tmp_dir || "C:\\MSSQLaaS\\tmp" %>
+
+resque:
+  host: <%= redis_host %>
+  port: <%= redis_port %>
+  password: <%= redis_password %>
+  expire: <%= redis_expire %>
+
+logging:
+  level: debug
+  file: C:\\MSSQLaaS\\tmp\\mssql\\log\\mssql_worker.log
+
+index: <%= index %>
+
+node_id: <%= "#{service}_node_#{plan}_#{index}" %>

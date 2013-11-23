@@ -1,0 +1,122 @@
+#!/usr/bin/env ruby
+
+ENV["BUNDLE_GEMFILE"] = File.expand_path("../Gemfile", File.dirname(__FILE__))
+
+begin
+  require "rubygems"
+  require 'bundler/setup'
+  require 'win32/daemon'
+  require 'win32/process'
+  require 'sys/proctable'
+  require 'rbconfig'
+  require 'timeout'
+  require 'bundler'
+
+  include Win32
+  include RbConfig
+  include Sys
+
+  PATH = File.dirname(File.expand_path($0)).tr('/', '\\')
+  LOG_FILE = "#{PATH}/win32_daemon_log.log"
+  RUBYW = File.join(CONFIG['bindir'], CONFIG['rubyw_install_name']).tr('/', '\\')
+  STARTUP_SCRIPT = ARGV.first
+
+  class MSSQLServiceDaemon < Daemon
+    # This method fires off before the +service_main+ mainloop is entered.
+    # Any pre-setup code you need to run before your service's mainloop
+    # starts should be put here. Otherwise the service might fail with a
+    # timeout error when you try to start it.
+    #
+    def service_init
+      log "Initializing service at: #{Time.now}"
+    end
+
+    # This is the daemon's mainloop. In other words, whatever runs here
+    # is the code that runs while your service is running. Note that the
+    # loop is not implicit.
+    #
+    # You must setup a loop as I've done here with the 'while running?'
+    # code, or setup your own loop. Otherwise your service will exit and
+    # won't be especially useful.
+    #
+    # In this particular case, I've setup a loop to append a short message
+    # and timestamp to a file on your C: drive every 20 seconds. Be sure
+    # to stop the service when you're done!
+    #
+    def service_main(*args)
+      log "service_main entered at: #{Time.now}"
+
+      @service_pid = start_service
+
+      # While we're in here the daemon is running.
+      while running?
+        begin
+          Timeout::timeout(20) do
+            Process.waitpid(@service_pid)
+          end
+          if running?
+            kill_service
+            @service_pid = start_service
+            log "Restart #{STARTUP_SCRIPT} with pid #{@service_pid}"
+          end
+        rescue Timeout::Error
+          log "Service is running #{Time.now} with pid #{@service_pid}"
+        end
+      end
+
+      # We've left the loop, the daemon is about to exit.
+      log "STATE: #{state}"
+
+      log "service_main left at: #{Time.now}"
+    end
+
+    # This event triggers when the service receives a signal to stop.
+    #
+    # NOTE: Older versions of this code used an explicit exit! call
+    # to force the Ruby interpreter to exit. Don't do that. It is no
+    # longer required and, in fact, may cause issues.
+    #
+    def service_stop
+      kill_service
+      log "Received stop signal at: #{Time.now}"
+      exit!
+    end
+
+    # This event triggers when the service receives a signal to pause.
+    #
+    def service_pause
+      log "Received pause signal at: #{Time.now}"
+    end
+
+    # This event triggers when the service receives a signal to resume
+    # from a paused state.
+    #
+    def service_resume
+      log "Received resume signal at: #{Time.now}"
+    end
+
+    private
+
+    def start_service
+      Process.spawn "bundle exec #{RUBYW} #{PATH}\\#{STARTUP_SCRIPT}", :chdir => "#{PATH}/.."
+    end
+
+    def kill_service
+      log "kill service with pid #{@service_pid}"
+      system "taskkill /PID #{@service_pid} /T /F"
+      Process.waitall
+      exit!
+    end
+
+    def log(msg)
+      File.open(LOG_FILE, 'a'){ |f| f.puts msg }
+    end
+  end
+  # Create an instance of the Daemon and put it into a loop.
+  #
+  MSSQLServiceDaemon.mainloop
+
+rescue Exception => err
+  File.open(LOG_FILE, 'a'){ |f| f.puts "Daemon failure: #{Time.now} exception=#{err.inspect}#{$/}#{err.backtrace.join($/)}" }
+  raise
+end

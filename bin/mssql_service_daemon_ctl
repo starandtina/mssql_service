@@ -1,0 +1,66 @@
+#!/usr/bin/env ruby
+
+require "rubygems"
+require 'bundler/setup'
+require "thor"
+require 'win32/service'
+require 'rbconfig'
+
+include Win32
+include RbConfig
+
+RUBYW = File.join(CONFIG['bindir'], CONFIG['rubyw_install_name']).tr('/', '\\')
+PATH = File.dirname(File.expand_path($0)).tr('/', '\\')
+
+class MSSQLServiceCtl < Thor
+
+  desc "install SERVICE_NAME SERVICE_DISPLAYNAME, STARTUP_SCRIPT", "Create a service"
+  def install(service_name, display_name, startup_script)
+      if Service.exists? service_name
+        puts "The specified service does exist as an installed service."
+        return
+      end
+
+      service_name = service_name
+      service_dispalyname = display_name
+
+      Service.new(
+         :service_name     => service_name,
+         :display_name     => service_dispalyname,
+         :description      => 'vCHS Ruby service for MSSQL',
+         :service_type     => Service::WIN32_OWN_PROCESS,
+         :binary_path_name => "#{RUBYW} -C #{PATH} mssql_service_daemon #{startup_script}",
+         :start_type       => Service::AUTO_START,
+         :error_control    => Service::ERROR_NORMAL,
+         :load_order_group => 'Network',
+         :dependencies     => nil
+      )
+
+      puts "Service #{service_name} installd"
+  end
+
+  desc "delete SERVICE_NAME", "Delete a serivce"
+  def delete(service_name)
+    unless Service.exists? service_name
+      puts "The specified service does not exist as an installed service."
+      return
+    end
+
+    # Should stop it and then delete it
+    if Service.status(service_name).current_state != 'stopped'
+       Service.stop service_name
+    end
+
+    while Service.status(service_name).current_state != 'stopped'
+       puts 'One moment...' + Service.status(service_name).current_state
+       sleep 1
+    end
+
+    Service.delete service_name
+
+    puts "Service #{service_name} deleted"
+  end
+
+end
+
+MSSQLServiceCtl.start
